@@ -53,7 +53,6 @@ def delete_product(request, product_id):
     return JsonResponse({"message": "Deleted (soft) successfully"})
 
 @csrf_exempt
-@csrf_exempt
 def list_products(request):
     try:
         page = int(request.GET.get("page", 1))
