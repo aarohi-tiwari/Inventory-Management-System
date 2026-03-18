@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+
+<h2>Add / Edit Product</h2>
+
+<form id="productForm">
+    <input type="hidden" id="productId">
+    <input class="form-control mb-2" placeholder="Name" id="name">
+    <input class="form-control mb-2" placeholder="Price" id="price">
+    <input class="form-control mb-2" placeholder="Brand" id="brand">
+    <input class="form-control mb-2" placeholder="Category" id="category">
+    <input class="form-control mb-2" placeholder="Quantity" id="quantity">
+
+    <button class="btn btn-primary">Save</button>
+</form>
+
+<hr>
+
+<h2>Search & Filter</h2>
+
+<input class="form-control mb-2" placeholder="Search by name" id="search">
+<input class="form-control mb-2" placeholder="Filter by brand" id="filterBrand">
+<input class="form-control mb-2" placeholder="Filter by category" id="filterCategory">
+
+<button class="btn btn-secondary mb-3" onclick="applyFilters()">Apply</button>
+<hr>
+
+<h2>Products</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th><th>Price</th><th>Brand</th><th>Category</th><th>Qty</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="productList"></tbody>
+</table>
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <button class="btn btn-outline-primary" onclick="prevPage()">Prev</button>
+    
+    <span id="pageInfo">Page 1</span>
+    
+    <button class="btn btn-outline-primary" onclick="nextPage()">Next</button>
+</div>
+
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let limit = 5;
+let editingId = null;
+
+function applyFilters() {
+    currentPage = 1;
+    loadProducts();
+}
+
+// ✅ CSRF TOKEN FUNCTION
+function getCSRFToken() {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken'))
+        ?.split('=')[1];
+}
+
+// ✅ LOAD PRODUCTS
+async function loadProducts() {
+    let search = document.getElementById("search").value || "";
+    let brand = document.getElementById("filterBrand").value || "";
+    let category = document.getElementById("filterCategory").value || "";
+
+    let url = `/api/products/list/?page=${currentPage}&limit=${limit}&search=${search}&brand=${brand}&category=${category}`;
+
+    let res = await fetch(url);
+    let data = await res.json();
+
+    totalPages = data.total_pages || 1;
+
+    let html = "";
+    data.products.forEach(p => {
+        html += `<tr>
+            <td>${p.name}</td>
+            <td>${p.price}</td>
+            <td>${p.brand}</td>
+            <td>${p.category || ""}</td>
+            <td>${p.quantity}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick="editProduct('${p.id}', '${p.name}', ${p.price}, '${p.brand}', '${p.category}', ${p.quantity})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById("productList").innerHTML = html;
+
+    // ✅ Update page info
+    document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
+}
+
+function nextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadProducts();
+    }
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadProducts();
+    }
+}
+
+// ✅ EDIT
+function editProduct(id, nameVal, priceVal, brandVal, categoryVal, quantityVal) {
+    editingId = id;
+
+    document.getElementById("name").value = nameVal;
+    document.getElementById("price").value = priceVal;
+    document.getElementById("brand").value = brandVal;
+    document.getElementById("category").value = categoryVal;
+    document.getElementById("quantity").value = quantityVal;
+}
+
+// ✅ DELETE
+async function deleteProduct(id) {
+    if (!confirm("Do you want to delete this entry?")) return;
+
+    let res = await fetch(`/api/products/delete/${id}/`,{
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+
+    let data = await res.json();
+    console.log(data);  // 🔍 debug
+
+    loadProducts();
+}
+
+// ✅ CREATE / UPDATE
+document.getElementById("productForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+let data = {
+    name: document.getElementById("name").value,
+    price: parseFloat(document.getElementById("price").value),
+    brand: document.getElementById("brand").value,
+    category: document.getElementById("category").value,
+    quantity: parseInt(document.getElementById("quantity").value)
+};
+
+    let url = "/api/products/";
+    let method = "POST";
+
+    if (editingId) {
+        url = `/api/products/${editingId}/`;
+        method = "PUT";
+    }
+
+    let res = await fetch(url, {
+        method: method,
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCSRFToken()
+        },
+        body: JSON.stringify(data)
+    });
+
+    let result = await res.json();
+
+    if (res.status >= 400) {
+        alert("Error: " + JSON.stringify(result));
+    } else {
+        alert("Success!");
+    }
+
+    editingId = null;
+    productForm.reset();
+
+    loadProducts();
+});
+
+// INIT
+loadProducts();
+</script>
+
+</body>
+</html>

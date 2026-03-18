@@ -1,0 +1,50 @@
+# 🔐 Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 🔧 Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# 📦 Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# 🗄️ Database
+db.sqlite3
+*.sqlite3
+
+# 🔒 Environment variables
+.env
+
+# 🧪 Logs
+*.log
+
+# 📁 Static files (optional if collected)
+staticfiles/
+
+# 🧾 Media files (user uploads)
+media/
+
+# 🛠️ VS Code
+.vscode/
+
+# 🧠 PyCharm
+.idea/
+
+# 🐍 Django stuff
+*.pot
+*.pyc
+local_settings.py
+
+# 🌐 OS files
+.DS_Store
+Thumbs.db
+
+# 🔥 Migrations (optional - depends on team)
+**/migrations/*
+!**/migrations/__init__.py
