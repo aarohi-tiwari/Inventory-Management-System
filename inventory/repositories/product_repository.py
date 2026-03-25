@@ -14,7 +14,7 @@ class ProductRepository:
         return Product.objects(id=product_id, is_deleted=False).first()
 
     @staticmethod
-    def get_all(page, limit, search=None, brand=None, category=None):
+    def get_all(page, limit, search=None, brand=None, category=None, created_after=None, updated_after=None, sort_by="-created_at"):
         products = Product.objects.filter(is_deleted=False)
 
         if search:
@@ -24,7 +24,17 @@ class ProductRepository:
             products = products.filter(brand__icontains=brand)
 
         if category:
-            products = products.filter(category__icontains=category)
+            products = products.filter(category=category)
+
+        if created_after:
+            products = products.filter(created_at__gte=created_after)
+
+        if updated_after:
+            products = products.filter(updated_at__gte=updated_after)
+
+        allowed_sorts = {"created_at", "-created_at", "updated_at", "-updated_at", "name", "-name"}
+        if sort_by in allowed_sorts:
+            products = products.order_by(sort_by)
 
         total = products.count()
 
@@ -54,3 +64,25 @@ class ProductRepository:
         product.is_deleted = True
         product.save()
         return True
+
+    @staticmethod
+    def get_products_by_category(category_id):
+        return Product.objects(category=category_id, is_deleted=False)
+
+    @staticmethod
+    def assign_category(product_id, category):
+        product = Product.objects(id=product_id, is_deleted=False).first()
+        if not product:
+            return None
+        product.category = category
+        product.save()
+        return product
+
+    @staticmethod
+    def remove_category(product_id, category_id):
+        product = Product.objects(id=product_id, is_deleted=False, category=category_id).first()
+        if not product:
+            return None
+        product.category = None
+        product.save()
+        return product
