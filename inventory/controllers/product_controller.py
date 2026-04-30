@@ -24,6 +24,21 @@ def _safe_category_data(product):
         return None, None
     return None, None
 
+
+def _product_payload(p):
+    category_id, category_name = _safe_category_data(p)
+    return {
+        "id": str(p.id),
+        "name": p.name,
+        "price": float(p.price),
+        "brand": p.brand,
+        "category": category_id,
+        "category_name": category_name,
+        "quantity": p.quantity,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+        "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+    }
+
 @csrf_exempt
 def create_product(request):
     try:
@@ -48,6 +63,15 @@ def create_product(request):
 @csrf_exempt
 def update_product(request, product_id):
     try:
+        if request.method == "GET":
+            product = Product.objects(id=product_id, is_deleted=False).first()
+            if not product:
+                return JsonResponse({"error": "Product not found"}, status=404)
+            return JsonResponse(_product_payload(product))
+
+        if request.method != "PUT":
+            return JsonResponse({"error": "Method not allowed"}, status=405)
+
         data = json.loads(request.body)
         product, errors = ProductService.update_product(product_id, data)
 
@@ -94,18 +118,7 @@ def list_products(request):
 
         data = []
         for p in products:
-            category_id, category_name = _safe_category_data(p)
-            data.append({
-                "id": str(p.id),
-                "name": p.name,
-                "price": float(p.price),
-                "brand": p.brand,
-                "category": category_id,
-                "category_name": category_name,
-                "quantity": p.quantity,
-                "created_at": p.created_at.isoformat() if p.created_at else None,
-                "updated_at": p.updated_at.isoformat() if p.updated_at else None
-            })
+            data.append(_product_payload(p))
 
         return JsonResponse({
             "products": data,

@@ -11,28 +11,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import django
 django.setup()
 
-from inventory.models.product_model import Product
-from inventory.models.product_category_model import ProductCategory
+"""
+Deprecated.
 
-
-def migrate_categories():
-    for product in Product.objects():
-        if product.category_old:
-            category_name = product.category_old.strip().title()
-
-            # Check if category exists
-            category = ProductCategory.objects(title=category_name).first()
-
-            if not category:
-                category = ProductCategory(title=category_name)
-                category.save()
-
-            # Assign reference
-            product.category = category
-            product.save()
-
-    print("Migration completed ✅")
-
+Use the Django management command instead:
+  py manage.py cleanup_category_old
+"""
 
 if __name__ == "__main__":
-    migrate_categories()
+    raise SystemExit("Deprecated: run `py manage.py cleanup_category_old` instead.")

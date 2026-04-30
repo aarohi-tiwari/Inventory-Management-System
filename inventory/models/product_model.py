@@ -8,7 +8,6 @@ class Product(Document):
 
     name = StringField(required=True)
     category = ReferenceField(ProductCategory)
-    category_old = StringField()   # TEMP
     price = FloatField(required=True)
     brand = StringField()
     quantity = IntField(default=0, min_value=0) 
